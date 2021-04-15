@@ -143,6 +143,7 @@
         //         labelContainer.appendChild(document.createElement("div"));
         //     }
         // }
+        
         async function init() {
         const modelURL = URL + 'model.json';
         const metadataURL = URL + 'metadata.json';
@@ -171,7 +172,12 @@
         // only now start the webcam --> **after video-object added to DOM and attributes are set**
         webcam.play();
         window.requestAnimationFrame(loop); // update canvas by loop-function
-    }
+        labelContainer = document.getElementById("label-container");
+        for (let i = 0; i < maxPredictions; i++) { // and class labels
+            labelContainer.appendChild(document.createElement("div"));
+        }
+
+        }
         async function loop() {
             webcam.update(); // update the webcam frame
             await predict();
@@ -181,7 +187,8 @@
         // run the webcam image through the image model
         async function predict() {
             // predict can take in an image, video or canvas html element
-            const prediction = await model.predict(webcam.canvas);
+            // const prediction = await model.predict(webcam.canvas);
+            const prediction = await model.predict(webcam.webcam);
             var pred_result = [];
             for (let i = 0; i < maxPredictions; i++) {
                 const Predct_Name = prediction[i].className;
