@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MASK CHECKER</title>
+    <link href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css">
+    <style type="text/css">
+        body {
+            font-family: "微軟正黑體", "黑體-繁", sans-serif;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdn.bootcss.com/noty/3.1.4/noty.min.js"></script>
+    <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/noty/3.1.4/noty.min.css" rel="stylesheet"> -->
+</head>
+<body>
+    
+    <!-- <button id="sumitBtn">送出</button>
+
+    <p>裝置名稱：<span id="deviceName"></span></p>
+
+
+    LED開關：
+    <div id="LED_SW">
+        <input type="radio" id="LED_ON" class="SW" value="on" name="SW">
+        <label for="LED_ON"> 開 </label>
+        <input type="radio" id="LED_OFF" class="SW" checked="checked" value="off" name="SW">
+        <label for="LED_OFF"> 關</label>
+    </div> -->
+    <div>Teachable Machine Image Model</div>
+    Teachable Machine URL:
+    <input type="text" id="modelurl" class="inputtext" name="inputtext" autocomplete="on" value="https://teachablemachine.withgoogle.com/models/qIKWYW725/"><br>
+    Adafruit IO Active Key:
+    <input type="text" id="activekey" class="inputtext" name="inputtext" autocomplete="on" value=""><br>
+    Adafruit IO Username:
+    <input type="text" id="username" class="inputtext" name="inputtext" autocomplete="on" value="Rainnie"><br>
+    Adafruit IO Feed:
+    <input type="text" id="feed" class="inputtext" name="inputtext" autocomplete="on" value="mask-checker"><br>
+    <button type="button" id="btn" class="btn" onclick="init()" disabled>Start</button>
+    <p>RESULT：<span id="predictResult"></span></p>
+    <p>MAX_Value：<span id="maxvalue"></span></p>
+    <div id="webcam-container"></div>
+    <div id="label-container"></div>
+
+    <script type="text/javascript">
+        
+        $(document).ready(function () {
+            $('#activekey').on('input', function () {
+                if ($(this).val() != '') {
+                    $('#btn').attr('disabled', false);
+                }
+                else {
+                    $('#btn').attr('disabled', true);
+                }
+            });
+        });
+        // More API functions here:
+        // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/image
+
+        // the link to your model provided by Teachable Machine export panel
+        
+
+        let model, webcam, labelContainer, maxPredictions;
+        var alarm_stus = false;
+
+        // Load the image model and setup the webcam
+        // async function init() {
+        //     const modelURL = URL + "model.json";
+        //     const metadataURL = URL + "metadata.json";
+
+        //     // load the model and metadata
+        //     // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
+        //     // or files from your local hard drive
+        //     // Note: the pose library adds "tmImage" object to your window (window.tmImage)
+        //     model = await tmImage.load(modelURL, metadataURL);
+        //     maxPredictions = model.getTotalClasses();
+
+        //     // Convenience function to setup a webcam
+        //     const flip = true; // whether to flip the webcam
+        //     webcam = new tmImage.Webcam(200, 200, flip); // width, height, flip
+        //     await webcam.setup(); // request access to the webcam
+        //     await webcam.play();
+        //     window.requestAnimationFrame(loop);
+
+        //     // append elements to the DOM
+        //     document.getElementById("webcam-container").appendChild(webcam.canvas);
+        //     labelContainer = document.getElementById("label-container");
+        //     for (let i = 0; i < maxPredictions; i++) { // and class labels
+        //         labelContainer.appendChild(document.createElement("div"));
+        //     }
+        // }
+        async function checkStr() {
+            console.log(document.getElementById("activekey").value);
+        }
+        async function init() {
+            
+            const URL = "https://teachablemachine.withgoogle.com/models/qIKWYW725/";
+            const modelURL = URL + 'model.json';
+            const metadataURL = URL + 'metadata.json';
+
+            // load the model and metadata
+            // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
+            // or files from your local hard drive
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+
+            // convenience function to setup a webcam
+            const flip = true; // whether to flip the webcam
+            webcam = new tmImage.Webcam(1800, 800, flip); // width, height, flip
+            await webcam.setup({ facingMode: "environment" }); // use "user" to use front-cam on mobile phones
+
+            // append elements to the DOM --> **before starting the webcam**
+            // document.getElementById('webcam-container').appendChild(webcam.canvas); // just in case you want to use specifically the canvas
+            document.getElementById('webcam-container').appendChild(webcam.webcam); // webcam object needs to be added in any case to make this work on iOS
+
+            // grab video-object in any way you want and set the attributes --> **"muted" and "playsinline"**
+            let wc = document.getElementsByTagName('video')[0];
+            wc.setAttribute("playsinline", true); // written with "setAttribute" bc. iOS buggs otherwise :-)
+            wc.muted = "true"
+            wc.id = "webcamVideo";
+
+            // only now start the webcam --> **after video-object added to DOM and attributes are set**
+            webcam.play();
+            window.requestAnimationFrame(loop); // update canvas by loop-function
+            labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < maxPredictions; i++) { // and class labels
+                labelContainer.appendChild(document.createElement("div"));
+            }
+
+        }
+        async function loop() {
+            webcam.update(); // update the webcam frame
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        // run the webcam image through the image model
+        async function predict() {
+            // predict can take in an image, video or canvas html element
+            // const prediction = await model.predict(webcam.canvas);
+            const prediction = await model.predict(webcam.webcam);
+            const aio_n = document.getElementById("username").value; // Adafruit user name
+            const aio_k = document.getElementById("activekey").value; // Adafruit IO Key
+            const aio_f = document.getElementById("feed").value; // Adafruit feed name
+            var pred_result = [];
+            for (let i = 0; i < maxPredictions; i++) {
+                const Predct_Name = prediction[i].className;
+                const Predct_Probability = prediction[i].probability.toFixed(2);
+                
+                if (typeof pred_result !== 'undefined' && pred_result.length == 0){
+                    pred_result = [parseFloat(Predct_Probability), Predct_Name];
+                }                
+                else if (parseFloat(Predct_Probability) > pred_result[0]){                   
+                    pred_result = [parseFloat(Predct_Probability), Predct_Name];
+                }
+                
+                // console.log([parseFloat(Predct_Probability), parseFloat(pred_result[0])]);
+                
+                labelContainer.childNodes[i].innerHTML = Predct_Name + " : " + Predct_Probability;
+            }
+            console.log(".");
+            // var maxIndex = probabilityList.indexOf(Math.max.apply(null, probabilityList));
+            // $("#maxvalue").text(Math.max.apply(null, probabilityList));
+            $("#predictResult").text(pred_result[1]);
+            if (pred_result[0] > 0.7 && pred_result[1] == "no_mask" && !alarm_stus ){
+                console.log("alarm!");
+                // sendAlarm(pred_result[1]);
+                alarm_stus = true;
+                $.ajax({
+                        url: "https://io.adafruit.com/api/v2/" + aio_n + "/feeds/" + aio_f + "/data?X-AIO-Key=" + aio_k,
+                        type: "POST",
+                        data: {
+                          "value":100
+                        },
+                      })
+                      .done(function (data) {
+                        new Noty({
+                          text: '發出通知',
+                          type: 'info'
+                        }).show();
+                      })
+                      .fail(function () {
+                        new Noty({
+                          text: '無法發出通知',
+                          type: 'error'
+                        }).show();
+                      });                
+            }
+            else if (pred_result[1] !== "no_mask" && alarm_stus){
+                console.log("clear!");
+                // sendAlarm(pred_result[1]);
+                alarm_stus = false;
+                $.ajax({
+                        url: "https://io.adafruit.com/api/v2/" + aio_n + "/feeds/" + aio_f + "/data?X-AIO-Key=" + aio_k,
+                        type: "POST",
+                        data: {
+                          "value":0
+                        },
+                      })
+                      .done(function (data) {
+                        new Noty({
+                          text: '發出通知',
+                          type: 'info'
+                        }).show();
+                      })
+                      .fail(function () {
+                        new Noty({
+                          text: '無法發出通知',
+                          type: 'error'
+                        }).show();
+                      });                
+            }
+            
+            
+        }
+
+
+    </script>
+
+
+
+    <!-- <script>
+        const UART_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+        const RX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+        const TX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+        var BLEDevice = null;
+        var UARTService = null;
+
+        async function connectBLE() {
+            let opt = {
+                filters: [
+                    { namePrefix: 'ESP32' },
+                    { services: [UART_SERVICE] }
+                ],
+                //optionalServices: ['battery_service']
+            }
+
+            try {
+                console.log('請求BLE裝置連線…');
+                BLEDevice = await navigator.bluetooth.requestDevice(opt);
+                console.log('裝置名稱：' + BLEDevice.name);
+                $("#deviceName").text(BLEDevice.name);
+
+                console.log('連接GATT伺服器…');
+                const server = await BLEDevice.gatt.connect();
+
+                console.log('取得UART服務…');
+                UARTService = await server.getPrimaryService(UART_SERVICE);
+
+                console.log('取得TX特徵…');
+                const txChar = await UARTService.getCharacteristic(TX_UUID);
+
+                await txChar.startNotifications();
+
+                txChar.addEventListener('characteristicvaluechanged',
+                    e => {
+                        let val = e.target.value;
+                        let str = new TextDecoder("utf-8").decode(val)
+                        $('#magnet').text(str)
+                    }
+                );
+
+            } catch (err) {
+                console.log('出錯啦～' + err);
+            }
+        }
+
+        $("#sumitBtn").click((e) => {
+            if (!navigator.bluetooth) {
+                console.log('你的瀏覽器不支援Web Bluetooth API，換一個吧～');
+                return false;
+            }
+
+            connectBLE();
+        });
+
+
+        $("#LED_SW").buttonset();
+        $(".SW").change(async e => {
+            if (!BLEDevice) {
+                return;
+            }
+            let state = e.target.value;
+            let enc = new TextEncoder();
+            console.log("LED: " + state);
+            if (BLEDevice.gatt.connected) {
+                const rxChar = await UARTService.getCharacteristic(RX_UUID);
+                rxChar.writeValue(enc.encode(state));
+            } else {
+                return;
+            }
+        });
+
+    </script> -->
+</body>
+
+</html>
