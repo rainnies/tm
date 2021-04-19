@@ -94,9 +94,7 @@
         //         labelContainer.appendChild(document.createElement("div"));
         //     }
         // }
-        async function checkStr() {
-            console.log(document.getElementById("activekey").value);
-        }
+
         async function init() {
             
             const URL = "https://teachablemachine.withgoogle.com/models/qIKWYW725/";
@@ -111,7 +109,7 @@
 
             // convenience function to setup a webcam
             const flip = true; // whether to flip the webcam
-            webcam = new tmImage.Webcam(1800, 800, flip); // width, height, flip
+            webcam = new tmImage.Webcam(640, 480, flip); // width, height, flip
             await webcam.setup({ facingMode: "user" }); // use "user" to use front-cam on mobile phones
 
             // append elements to the DOM --> **before starting the webcam**
@@ -163,7 +161,7 @@
                 
                 labelContainer.childNodes[i].innerHTML = Predct_Name + " : " + Predct_Probability;
             }
-            console.log(".");
+            // console.log(".");
             // var maxIndex = probabilityList.indexOf(Math.max.apply(null, probabilityList));
             // $("#maxvalue").text(Math.max.apply(null, probabilityList));
             $("#predictResult").text(pred_result[1]);
@@ -178,12 +176,12 @@
                           "value":100
                         },
                       })
-                      .done(function (data) {
-                        new Noty({
-                          text: '發出通知',
-                          type: 'info'
-                        }).show();
-                      })
+                    //   .done(function (data) {
+                    //     new Noty({
+                    //       text: '發出通知',
+                    //       type: 'info'
+                    //     }).show();
+                    //   })
                       .fail(function () {
                         new Noty({
                           text: '無法發出通知',
@@ -202,12 +200,12 @@
                           "value":0
                         },
                       })
-                      .done(function (data) {
-                        new Noty({
-                          text: '發出通知',
-                          type: 'info'
-                        }).show();
-                      })
+                    //   .done(function (data) {
+                    //     new Noty({
+                    //       text: '發出通知',
+                    //       type: 'info'
+                    //     }).show();
+                    //   })
                       .fail(function () {
                         new Noty({
                           text: '無法發出通知',
