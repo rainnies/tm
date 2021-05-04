@@ -9,6 +9,16 @@
     h1{
         text-align: center;
     }
+    #startBtn{
+        background-color: rgb(0, 0, 0); 
+        width: 40%; 
+        height: 10vh; 
+        border-radius: 10px; 
+        color: rgb(255, 255, 255);
+        font-size: xx-large;
+        margin-top: 10px;
+        /* padding-top: 50px; */
+    }
     .inputtext{
         width: 50%;
         font-size: x-large;
@@ -19,7 +29,9 @@
         border-radius: 15px;
         background-color: cadetblue;
         opacity: 50%;
-        border: 3px solid white;
+        border: 5px solid rgb(65, 65, 65);
+        width: 80%;
+        margin: auto;
         /* display: none; */
     }
  
@@ -59,29 +71,40 @@
         z-index: 100;
     }
     .label{
-        vertical-align:bottom;
+        /* vertical-align:bottom; */
         font-size: xx-large;
-        color: aquamarine;
+        color: #80ff00;
+        margin: auto;
+        margin-top: 10px;
+        text-align: center;
         /* transform: translate(-50%, -50%);
         -ms-transform: translate(-50%, -50%); */
         z-index: 99;
-        position:absolute;
+        position:relative;
         background: transparent;
+        background-color: rgb(136, 136, 136);
+        /* opacity: 30%; */
+        border-radius: 10px;
+        padding: 10px;
+        width: 20%;
+        display: none;
+        /* visibility: hidden; */
     }
-    webcamVideo
+    #webcamVideo
     {
         z-index: 0;
         /* width: 100%; */
         /* opacity:.65; */
         /* min-height:100vh; */
-        margin-left: auto;
-        position:absolute;
-        left: 200px;
-        /* position:relative; */
+        margin: auto;
+        /* position:absolute; */
+        min-width: 100%;
+        border-radius: 10px;
+        position:relative;
         /* position:fixed; */
-        /* background: transparent;
-        border-radius: 5px;
-        -webkit-transform: scaleX(-1);
+        /* background: transparent; */
+        /* border-radius: 5px; */
+        /* -webkit-transform: scaleX(-1);
         -moz-transform: scaleX(-1);
         -o-transform: scaleX(-1);
         transform: scaleX(-1); */
@@ -89,58 +112,76 @@
         filter: FlipH;
         -ms-filter: "FlipH";
     }
-    video{
-        margin: auto;
-        left: 200px;
-    }
+
     .cam {
-        height: 100vh;
-        width: 100%;
-        margin: auto;
-        left: 200px;
+        /* position: absolute; 
+        right: 0; 
+        bottom: 0;
+        min-width: 100%; 
+        min-height: 100%;
+        width: auto; 
+        height: auto;  */
+        border-radius: 10px;
+        z-index: 1;
+        /* background-size: cover;
+        overflow: hidden; */
     }
+
 </style>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <body>
 <!-- <div class="left"> -->
-<h1>LAB03</h1>
+<h1>LAB03 自製線上手語辨識系統</h1>
 
 <div class="div-relative" style="margin: auto;">
 <div class="msgbox" id="msgbox">
     <p style="color: black;">
     Teachable Machine URL:
     <input type="text" id="modelurl" class="inputtext" name="inputtext" autocomplete="on" value="https://teachablemachine.withgoogle.com/models/qIKWYW725/"><br>
-    Adafruit IO Active Key:
+
+    <!-- CMYK -->
+    <!-- <input type="text" id="modelurl" class="inputtext" name="inputtext" autocomplete="on" value="https://teachablemachine.withgoogle.com/models/MNClR6-Ky/"><br> -->
+ 
+    <!-- Adafruit IO Active Key:
     <input type="text" id="activekey" class="inputtext" name="inputtext" autocomplete="on" value=""><br>
     Adafruit IO Username:
     <input type="text" id="username" class="inputtext" name="inputtext" autocomplete="on" value="Rainnie"><br>
     Adafruit IO Feed:
-    <input type="text" id="feed" class="inputtext" name="inputtext" autocomplete="on" value="mask-checker"><br>
-    <button type="button" onclick="init()" style="background-color: rgb(0, 0, 0); width: 40%; height: 10vh; border-radius: 10px; color: rgb(255, 255, 255);">Start</button>
+    <input type="text" id="feed" class="inputtext" name="inputtext" autocomplete="on" value="mask-checker"><br> -->
+    <button id="startBtn" type="button" onclick="init()" >Start</button>
     </p>
 
 
 </div>
-<span id="dot1" class="dot"></span>
+<!-- <span id="dot1" class="dot"></span> -->
+<div class="w3-light-grey">
+    <div id="scoreBar" class="w3-container w3-green " style="width:0%;border-radius: 5px;display: none;">0</div>
+  </div>
 <div id="label-container" class="label"></div>
+<br>
 <div id="webcam-container" class="cam"></div>
 </div>
 <!-- </div> -->
 <!-- <div class="right"></div> -->
 </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 <script type="text/javascript">
+
     // More API functions here:
     // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/image
 
-    // the link to your model provided by Teachable Machine export panel
-    const URL = "https://teachablemachine.withgoogle.com/models/aez3WwgXn/";
+
 
     let model, webcam, labelContainer, maxPredictions;
-
+    var qNum, scoreValue;
     // Load the image model and setup the webcam
     async function init() {
+        // the link to your model provided by Teachable Machine export panel
+        const URL = document.getElementById("modelurl").value;
         document.getElementById("msgbox").style.display = "none";
+        document.getElementById("scoreBar").style.display = "block";
         const modelURL = URL + "model.json";
         const metadataURL = URL + "metadata.json";
 
@@ -149,6 +190,14 @@
         // or files from your local hard drive
         model = await tmImage.load(modelURL, metadataURL);
         maxPredictions = model.getTotalClasses();
+
+        //亂數機
+        const generator = new Math.seedrandom(Date.now());
+        const randomNumber = generator();
+        //隨機出題，排除最後一類：背景
+        qNum = Math.floor(Math.random() * (maxPredictions - 1));
+
+        console.log(qNum);
         
 
         // convenience function to setup a webcam
@@ -172,11 +221,13 @@
         window.requestAnimationFrame(loop); // update canvas by loop-function
         
         labelContainer = document.getElementById("label-container");
+        labelContainer.appendChild(document.createElement("div"));
+        labelContainer.style.display = "block";
         // wc.appendChild(labelContainer);
-        for (let i = 0; i < maxPredictions; i++) { // and class labels
-            labelContainer.appendChild(document.createElement("div"));
-        }
-        
+        // for (let i = 0; i < maxPredictions; i++) { // and class labels
+        //     labelContainer.appendChild(document.createElement("div"));
+        // }
+        // document.getElementsByClassName("label").style.visibility = "visible"
     }
 
     async function loop() {
@@ -187,19 +238,53 @@
 
     // run the webcam image through the image model
     async function predict() {
+        //******Read AIO info.*******
+        // Adafruit user name
+        // const aio_n = document.getElementById("username").value; 
+        // Adafruit IO Key
+        // const aio_k = document.getElementById("activekey").value;
+        // Adafruit feed name 
+        // const aio_f = document.getElementById("feed").value; 
+
         // predict can take in an image, video or canvas html element
         const prediction = await model.predict(webcam.canvas);
-        for (let i = 0; i < maxPredictions; i++) {
-            const classPrediction =
-                prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-            labelContainer.childNodes[i].innerHTML = classPrediction;
-            console.log(prediction[i].probability.toFixed(2));
-            if (prediction[i].probability.toFixed(2) > 0.5){
-                document.getElementById("dot1").style.backgroundColor = "#80ff00";
+
+        //紀錄成績
+        scoreValue = Math.floor(prediction[qNum].probability.toFixed(2)*100);
+
+        //將題目寫出來
+        labelContainer.firstChild.innerHTML = prediction[qNum].className ;
+
+
+        if (scoreValue > 50){
+                // document.getElementById("dot1").style.backgroundColor = "#80ff00";
+                labelContainer.style.backgroundColor = "#80ff00"
+                labelContainer.style.color = "#ffffff"
             }
-            else{
-                // document.getElementById("dot1").style.backgroundColor = "gray";
-            }
+        else{
+            // document.getElementById("dot1").style.backgroundColor = "#bbb";
+            labelContainer.style.backgroundColor = "rgb(136, 136, 136)"
+            labelContainer.style.color = "#80ff00"
         }
+        console.log(scoreValue)
+
+        var elem = document.getElementById("scoreBar");   
+        
+
+        elem.style.width = scoreValue + '%'; 
+        elem.innerHTML = scoreValue ;
+        
+        // for (let i = 0; i < maxPredictions; i++) {
+        //     const classPrediction =
+        //         prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+        //     labelContainer.childNodes[i].innerHTML = classPrediction;
+        //     // console.log(prediction[i].probability.toFixed(2));
+        //     if (prediction[i].probability.toFixed(2) > 0.5){
+        //         document.getElementById("dot1").style.backgroundColor = "#80ff00";
+        //     }
+        //     else{
+        //         // document.getElementById("dot1").style.backgroundColor = "gray";
+        //     }
+        // }
     }
 </script>
